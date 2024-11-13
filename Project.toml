@@ -1,0 +1,7 @@
+name = "GenomicCoordinates"
+uuid = "ba2eccb5-91b3-48f8-94f3-77bebdceebef"
+authors = ["Peter Arndt <arndt@molgen.mpg.de> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1.10"
