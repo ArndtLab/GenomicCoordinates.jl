@@ -1,5 +1,13 @@
 module GenomicCoordinates
 
-# Write your package code here.
+using Intervals
+
+export GenomicPosition, GenomicInterval, 
+    chr2int
+
+include("types.jl")
+include("intersections.jl")
+
+
 
 end
