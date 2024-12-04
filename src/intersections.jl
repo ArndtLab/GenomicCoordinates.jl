@@ -72,40 +72,40 @@ Returns an array of arrays, where the i-th element contains the indices of
 intervals in `y` that intersect with the i-th interval in `x`.
 """
 function find_intersections(x, y, compare=compare_for_overlap)
-    sx = sortperm(x)
-    sy = sortperm(y)
-    nx = 1
-    qf = 1
-    ql = 0
-    qi = 1
-    rx = 0
-    ry = 0
+    sortedIndices_x = sortperm(x)
+    sortedIndices_y = sortperm(y)
+    pos_x = 1
+    queue_first = 1
+    queue_last = 0
+    queue_i = 1
+    index_x = 0
+    index_y = 0
 
     results = [Int[] for i in 1:length(x)]
     
     while true
-        if qi > ql  # queue is empty
-            if qi <= length(sy) # add interval in y
-                ql += 1
+        if queue_i > queue_last  # queue is empty
+            if queue_i <= length(y) # add interval in y
+                queue_last += 1
             else # no more intervals in y, advance x
-                nx += 1
-                nx > length(sx) && break
-                qi = qf
+                pos_x += 1
+                pos_x > length(x) && break
+                queue_i = queue_first
             end
         else
-            rx = sx[nx]
-            ry = sy[qi]
-            c = compare(x[rx], y[ry])
-            qi += 1
+            index_x = sortedIndices_x[pos_x]
+            index_y = sortedIndices_y[queue_i]
+            c = compare(x[index_x], y[index_y])
+            queue_i += 1
             if c < 0 # advance x:  [---IX---]  [---IY---]
-                nx += 1  
-                nx > length(sx) && break
-                qi = qf
+                pos_x += 1  
+                pos_x > length(sortedIndices_x) && break
+                queue_i = queue_first
             elseif c == 0 # intersection found
-                push!(results[rx], ry)
+                push!(results[index_x], index_y)
             else  # c > 0   [---IY---]  [---IX---]
-                if qi == qf + 1 # noting else can intersect front of queue
-                    qf += 1
+                if queue_i == queue_first + 1 # noting else can intersect front of queue
+                    queue_first += 1
                 end
             end
         end
