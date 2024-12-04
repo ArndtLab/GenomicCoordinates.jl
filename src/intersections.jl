@@ -70,6 +70,10 @@ is used to compare two intervals. The default is `compare_for_overlap`.
 
 Returns an array of arrays, where the i-th element contains the indices of
 intervals in `y` that intersect with the i-th interval in `x`.
+
+The intervals in `x` and `y` do not need to be sorted. However the function
+will sort them internally, so for repeated calls it is more efficient to sort 
+them before calling this function.
 """
 function find_intersections(x, y, compare=compare_for_overlap)
     sortedIndices_x = sortperm(x)
