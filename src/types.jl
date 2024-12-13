@@ -16,7 +16,7 @@ Base.show(io::IO, p::GenomicPosition) = print(io, "GenomicPosition(", p.chr, ", 
 chr(p::GenomicPosition) = p.chr
 pos(p::GenomicPosition) = p.pos
 
-function Base.:<(a::GenomicPosition, b::GenomicPosition)
+function Base.isless(a::GenomicPosition, b::GenomicPosition)
     (a.chr, a.pos) < (b.chr, b.pos)
 end
 
@@ -58,7 +58,7 @@ Base.show(io::IO, iv::GenomicInterval) =
 
 
 
-function Base.:isless(a::GenomicInterval{C, P}, b::GenomicInterval{C, P}) where {C, P}
+function Base.isless(a::GenomicInterval{C, P}, b::GenomicInterval{C, P}) where {C, P}
     (a.first, a.last) < (b.first, b.last)
 end
 
