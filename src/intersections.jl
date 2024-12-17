@@ -62,20 +62,8 @@ function compare_for_inclusion_2in1(i1::Interval{T1,Closed,Closed},
 end
 
 
-"""
-    find_intersections(x, y, compare=compare_for_overlap)
-
-Find intersections between two arrays of intervals. The `compare` function
-is used to compare two intervals. The default is `compare_for_overlap`.
-
-Returns an array of arrays, where the i-th element contains the indices of
-intervals in `y` that intersect with the i-th interval in `x`.
-
-The intervals in `x` and `y` do not need to be sorted. However the function
-will sort them internally, so for repeated calls it is more efficient to sort 
-them before calling this function.
-"""
-function find_intersections(x, y, compare=compare_for_overlap)
+function _find_intersections(results, x, y, aggregator,
+        compare=compare_for_overlap)
     sortedIndices_x = sortperm(x)
     sortedIndices_y = sortperm(y)
     pos_x = 1
@@ -84,8 +72,6 @@ function find_intersections(x, y, compare=compare_for_overlap)
     queue_i = 1
     index_x = 0
     index_y = 0
-
-    results = [Int[] for i in 1:length(x)]
     
     while true
         if queue_i > queue_last  # queue is empty
@@ -106,7 +92,7 @@ function find_intersections(x, y, compare=compare_for_overlap)
                 pos_x > length(sortedIndices_x) && break
                 queue_i = queue_first
             elseif c == 0 # intersection found
-                push!(results[index_x], index_y)
+                aggregator(results, index_x, index_y)
             else  # c > 0   [---IY---]  [---IX---]
                 if queue_i == queue_first + 1 # noting else can intersect front of queue
                     queue_first += 1
@@ -117,3 +103,40 @@ function find_intersections(x, y, compare=compare_for_overlap)
     results
 end
 
+
+
+
+function find_intersections(::Type{Vector{Vector{T}}}, x, y) where T <: Integer
+    results = [T[] for i in 1:length(x)]
+    aggregator = (r, x, y) -> push!(r[x], y)
+    _find_intersections(results, x, y, aggregator)
+end
+
+
+function find_intersections(::Type{Vector{T}}, x, y) where T <: Integer
+    results = zeros(T, length(x))
+    aggregator = (r, x, y) -> r[x] += 1
+    _find_intersections(results, x, y, aggregator)
+end
+
+function find_intersections(::Type{Vector{Bool}}, x, y)
+    results = falses(length(x))
+    aggregator = (r, x, y) -> r[x] = true
+    _find_intersections(results, x, y, aggregator)
+end
+
+
+
+"""
+    find_intersections(x, y)
+
+Find intersections between two arrays of intervals. 
+
+Returns an array of arrays, where the i-th element contains the indices of
+intervals in `y` that intersect with the i-th interval in `x`.
+
+The intervals in `x` and `y` do not need to be sorted. However the function
+will sort them internally, so for repeated calls it is more efficient to sort 
+them before calling this function.
+"""
+find_intersections(x, y) = find_intersections(Vector{Vector{Int}}, x, y)

@@ -164,14 +164,31 @@ end
         GenomicInterval(1, 350, 450)
         ]
 
+
+
+
     r1 = Intervals.find_intersections(v1, v2)
     r2 = GenomicCoordinates.find_intersections(v1, v2)
     @test r1 == r2
+    r3 = GenomicCoordinates.find_intersections(Vector{Int}, v1, v2)
+    @test r3 == map(length, r2)
+    r4 = GenomicCoordinates.find_intersections(Vector{Bool}, v1, v2)
+    @test r4 == map(v -> length(v) > 0, r2)
+    @test r4 == map(>(0), r3)
+
 
     v1 = reverse(v1)
+
     r1 = Intervals.find_intersections(v1, v2)
     r2 = GenomicCoordinates.find_intersections(v1, v2)
     @test r1 == r2
+    r3 = GenomicCoordinates.find_intersections(Vector{Int}, v1, v2)
+    @test r3 == map(length, r2)
+    r4 = GenomicCoordinates.find_intersections(Vector{Bool}, v1, v2)
+    @test r4 == map(v -> length(v) > 0, r2)
+    @test r4 == map(>(0), r3)
+
+
     
 end
 

@@ -3,3 +3,4 @@ Manifest.toml
 /docs/build/
 /test/Manifest.toml
 *.cov
+.vscode/
