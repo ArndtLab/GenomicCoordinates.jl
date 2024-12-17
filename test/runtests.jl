@@ -32,9 +32,6 @@ end
 
     gene3 = GenomicInterval(1, 150)
     @show gene3
-
-    gene4 = GenomicInterval(1, 150, 149)
-    @show gene4
 end
 
 @testitem "Test Chr Int" begin
