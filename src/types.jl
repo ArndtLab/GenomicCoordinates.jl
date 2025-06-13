@@ -68,7 +68,7 @@ end
 
 Convert a chromosome name to an integer.
 """
-function chr2int(chr::AbstractString)::Int
+function chr2int(chr::AbstractString)::Int64
     if startswith(chr, "chr")
         chr = chr[4:end]
     end
@@ -81,7 +81,9 @@ function chr2int(chr::AbstractString)::Int
     elseif chr == "M" || chr == "MT"
         return 25
     else
-        2^8 + hash(chr) % 2^8
+        2^8 + hash(chr) % 2^(64 - 8 - 1)  # Use a hash for non-numeric chromosomes
+        # to ensure uniqueness and avoid collisions with numeric chromosomes
+        # This is a simple way to convert non-numeric chromosome names to integers.
     end
 end
 
