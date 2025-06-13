@@ -20,6 +20,7 @@ using TestItemRunner
     
     @test chr2int(1) == 1
     @test chr2int(23) == 23
+    @test chr2int("ML679985.1") != chr2int("VOCO01011341.1")
 end
 
 
