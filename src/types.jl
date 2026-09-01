@@ -85,22 +85,21 @@ end
 Convert a chromosome name to an integer.
 """
 function chr2int(chr::AbstractString)::Int64
-    if startswith(chr, "chr")
-        chr = chr[4:end]
-    end
-    if all(isdigit, chr)
-        return parse(Int, chr)
-    elseif chr == "X"
+    # SubString avoids copying the name just to strip the "chr" prefix
+    name = startswith(chr, "chr") ? SubString(chr, 4) : SubString(chr, 1)
+    if !isempty(name) && isdigit(@inbounds name[1])
+        n = tryparse(Int64, name)
+        n === nothing || return n
+    elseif name == "X"
         return 23
-    elseif chr == "Y"
+    elseif name == "Y"
         return 24
-    elseif chr == "M" || chr == "MT"
+    elseif name == "M" || name == "MT"
         return 25
-    else
-        2^8 + hash(chr) % 2^(64 - 8 - 1)  # Use a hash for non-numeric chromosomes
-        # to ensure uniqueness and avoid collisions with numeric chromosomes
-        # This is a simple way to convert non-numeric chromosome names to integers.
     end
+    2^8 + hash(name) % 2^(64 - 8 - 1)  # Use a hash for non-numeric chromosomes
+    # to ensure uniqueness and avoid collisions with numeric chromosomes
+    # This is a simple way to convert non-numeric chromosome names to integers.
 end
 
 function chr2int(chr::Int)::Int
