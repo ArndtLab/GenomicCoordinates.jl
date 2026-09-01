@@ -106,6 +106,12 @@ end
 
 
 
+"""
+    find_intersections(::Type{Vector{Vector{T}}}, x, y) where T <: Integer
+
+Like [`find_intersections`](@ref), but return the indices as `Vector{Vector{T}}`
+instead of `Vector{Vector{Int}}`.
+"""
 function find_intersections(::Type{Vector{Vector{T}}}, x, y) where T <: Integer
     results = [T[] for i in 1:length(x)]
     aggregator = (r, x, y) -> push!(r[x], y)
@@ -113,12 +119,24 @@ function find_intersections(::Type{Vector{Vector{T}}}, x, y) where T <: Integer
 end
 
 
+"""
+    find_intersections(::Type{Vector{T}}, x, y) where T <: Integer
+
+Like [`find_intersections`](@ref), but return a `Vector{T}` where the i-th
+element is the number of intervals in `y` that intersect with the i-th interval in `x`.
+"""
 function find_intersections(::Type{Vector{T}}, x, y) where T <: Integer
     results = zeros(T, length(x))
     aggregator = (r, x, y) -> r[x] += 1
     _find_intersections(results, x, y, aggregator)
 end
 
+"""
+    find_intersections(::Type{Vector{Bool}}, x, y)
+
+Like [`find_intersections`](@ref), but return a `Vector{Bool}` where the i-th
+element indicates whether the i-th interval in `x` intersects with any interval in `y`.
+"""
 function find_intersections(::Type{Vector{Bool}}, x, y)
     results = falses(length(x))
     aggregator = (r, x, y) -> r[x] = true

@@ -13,7 +13,18 @@ end
 
 Base.show(io::IO, p::GenomicPosition) = print(io, "GenomicPosition(", p.chr, ", ", p.pos, ")")
 
+"""
+    chr(p::GenomicPosition)
+
+Return the chromosome of the genomic position `p`.
+"""
 chr(p::GenomicPosition) = p.chr
+
+"""
+    pos(p::GenomicPosition)
+
+Return the position (offset on the chromosome) of the genomic position `p`.
+"""
 pos(p::GenomicPosition) = p.pos
 
 function Base.isless(a::GenomicPosition, b::GenomicPosition)
@@ -45,6 +56,11 @@ GenomicInterval(chr, first::P, last::P) where {P<:Integer} =
         GenomicPosition(chr, last)
     )
 
+"""
+    GenomicInterval(chr, pos::P)
+
+Create a single-position `GenomicInterval` on chromosome `chr` at position `pos`.
+"""
 GenomicInterval(chr, pos::P) where {P<:Integer} =
     Interval{GenomicPosition{typeof(chr),typeof(pos)},Closed,Closed}(
         GenomicPosition(chr, pos),
