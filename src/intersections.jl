@@ -62,6 +62,11 @@ function compare_for_inclusion_2in1(i1::Interval{T1,Closed,Closed},
 end
 
 
+# `aggregator(results, index_x, index_y)` records one intersection and returns
+# `true` to keep scanning the current interval in `x`, or `false` to move on to
+# the next one. Aggregators that only need to know *whether* an interval in `x`
+# is hit return `false` and skip the rest of its queue scan. Because each
+# aggregator returns a literal, the branch below folds away when specialized.
 function _find_intersections(results, x, y, aggregator,
         compare=compare_for_overlap)
     sortedIndices_x = sortperm(x)
@@ -92,7 +97,14 @@ function _find_intersections(results, x, y, aggregator,
                 pos_x > length(sortedIndices_x) && break
                 queue_i = queue_first
             elseif c == 0 # intersection found
-                aggregator(results, index_x, index_y)
+                if !aggregator(results, index_x, index_y)
+                    # this interval in x needs nothing further; skip the rest of
+                    # its queue scan. queue_first is left where it is -- the next
+                    # interval in x re-scans from there and drops what is dead.
+                    pos_x += 1
+                    pos_x > length(sortedIndices_x) && break
+                    queue_i = queue_first
+                end
             else  # c > 0   [---IY---]  [---IX---]
                 if queue_i == queue_first + 1 # noting else can intersect front of queue
                     queue_first += 1
@@ -114,7 +126,7 @@ instead of `Vector{Vector{Int}}`.
 """
 function find_intersections(::Type{Vector{Vector{T}}}, x, y) where T <: Integer
     results = [T[] for i in 1:length(x)]
-    aggregator = (r, x, y) -> push!(r[x], y)
+    aggregator = (r, x, y) -> (push!(r[x], y); true)
     _find_intersections(results, x, y, aggregator)
 end
 
@@ -127,7 +139,7 @@ element is the number of intervals in `y` that intersect with the i-th interval 
 """
 function find_intersections(::Type{Vector{T}}, x, y) where T <: Integer
     results = zeros(T, length(x))
-    aggregator = (r, x, y) -> r[x] += 1
+    aggregator = (r, x, y) -> (r[x] += 1; true)
     _find_intersections(results, x, y, aggregator)
 end
 
@@ -138,8 +150,8 @@ Like [`find_intersections`](@ref), but return a `Vector{Bool}` where the i-th
 element indicates whether the i-th interval in `x` intersects with any interval in `y`.
 """
 function find_intersections(::Type{Vector{Bool}}, x, y)
-    results = falses(length(x))
-    aggregator = (r, x, y) -> r[x] = true
+    results = fill(false, length(x))
+    aggregator = (r, x, y) -> (r[x] = true; false)  # one hit settles it
     _find_intersections(results, x, y, aggregator)
 end
 
