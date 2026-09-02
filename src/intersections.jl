@@ -65,52 +65,57 @@ end
 # `aggregator(results, index_x, index_y)` records one intersection and returns
 # `true` to keep scanning the current interval in `x`, or `false` to move on to
 # the next one. Aggregators that only need to know *whether* an interval in `x`
-# is hit return `false` and skip the rest of its queue scan. Because each
+# is hit return `false` and skip the remaining comparisons for it. Because each
 # aggregator returns a literal, the branch below folds away when specialized.
 function _find_intersections(results, x, y, aggregator,
         compare=compare_for_overlap)
     sortedIndices_x = sortperm(x)
     sortedIndices_y = sortperm(y)
-    pos_x = 1
-    queue_first = 1
-    queue_last = 0
-    queue_i = 1
-    index_x = 0
-    index_y = 0
-    
-    while true
-        if queue_i > queue_last  # queue is empty
-            if queue_i <= length(y) # add interval in y
-                queue_last += 1
-            else # no more intervals in y, advance x
-                pos_x += 1
-                pos_x > length(x) && break
-                queue_i = queue_first
-            end
-        else
-            index_x = sortedIndices_x[pos_x]
-            index_y = sortedIndices_y[queue_i]
-            c = compare(x[index_x], y[index_y])
-            queue_i += 1
-            if c < 0 # advance x:  [---IX---]  [---IY---]
-                pos_x += 1  
-                pos_x > length(sortedIndices_x) && break
-                queue_i = queue_first
-            elseif c == 0 # intersection found
-                if !aggregator(results, index_x, index_y)
-                    # this interval in x needs nothing further; skip the rest of
-                    # its queue scan. queue_first is left where it is -- the next
-                    # interval in x re-scans from there and drops what is dead.
-                    pos_x += 1
-                    pos_x > length(sortedIndices_x) && break
-                    queue_i = queue_first
-                end
-            else  # c > 0   [---IY---]  [---IX---]
-                if queue_i == queue_first + 1 # noting else can intersect front of queue
-                    queue_first += 1
-                end
+
+    # The live set holds positions into sortedIndices_y whose intervals may still
+    # overlap the current or a later interval in x. It is an explicit list rather
+    # than a contiguous window so that a dead interval can be dropped from
+    # anywhere in it: y is ordered by where intervals start, but an interval dies
+    # by where it ends, and those two orders are unrelated. With a window, only a
+    # prefix can be dropped, so one wide interval in y pins the front and forces
+    # every interval in x to rescan everything behind it.
+    queue = Int[]
+    sizehint!(queue, 64)
+    next_y = 1
+
+    for pos_x in eachindex(sortedIndices_x)
+        index_x = sortedIndices_x[pos_x]
+        ix = x[index_x]
+
+        # admit every interval in y that starts at or before the end of ix
+        while next_y <= length(sortedIndices_y) &&
+                !(ix.last < y[sortedIndices_y[next_y]].first)
+            push!(queue, next_y)
+            next_y += 1
+        end
+
+        # Walk the live set, compacting it in place: `r` reads, `w` writes back
+        # only what is still live. Costs nothing, since we walk it to compare
+        # anyway. Deadness is tested geometrically rather than taken from
+        # `compare`, whose positive return means "after" for one comparator but
+        # "partially overlapping" -- still live -- for another.
+        w = 1
+        keep_scanning = true
+        for r in eachindex(queue)
+            qy = queue[r]
+            index_y = sortedIndices_y[qy]
+            iy = y[index_y]
+            # behind ix, and so behind every later interval in x: drop it
+            iy.last < ix.first && continue
+            queue[w] = qy
+            w += 1
+            # nothing more is needed for this ix, but keep compacting
+            keep_scanning || continue
+            if compare(ix, iy) == 0
+                keep_scanning = aggregator(results, index_x, index_y)
             end
         end
+        resize!(queue, w - 1)
     end
     results
 end
