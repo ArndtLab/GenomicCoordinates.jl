@@ -69,9 +69,19 @@ end
 # aggregator returns a literal, the branch below folds away when specialized.
 function _find_intersections(results, x, y, aggregator,
         compare=compare_for_overlap)
-    sortedIndices_x = sortperm(x)
-    sortedIndices_y = sortperm(y)
+    # `_sorting_permutation` returns a small Union, so resolve it to a concrete
+    # type here, once, rather than at every index into it inside the sweep.
+    _sweep_intersections(results, x, y,
+        _sorting_permutation(x), _sorting_permutation(y), aggregator, compare)
+end
 
+# Intervals that are already sorted need no permutation at all. Indexing the
+# identity range is the identity, so the sweep specialized for it indexes x and
+# y directly, and nothing is allocated for the sort.
+_sorting_permutation(v) = issorted(v) ? Base.OneTo(length(v)) : sortperm(v)
+
+function _sweep_intersections(results, x, y, sortedIndices_x, sortedIndices_y,
+        aggregator, compare)
     # The live set holds positions into sortedIndices_y whose intervals may still
     # overlap the current or a later interval in x. It is an explicit list rather
     # than a contiguous window so that a dead interval can be dropped from
